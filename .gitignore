@@ -131,3 +131,5 @@ dmypy.json
 .idea
 *.tar.gz
 */pth
+
+*.pth
