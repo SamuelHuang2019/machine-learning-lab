@@ -1,6 +1,6 @@
-#encoding:utf-8
+# encoding:utf-8
 #
-#created by xiongzihua 2017.12.26
+# created by xiongzihua 2017.12.26
 #
 import torch
 import torch.nn as nn
@@ -55,18 +55,18 @@ class yoloLoss(nn.Module):
         target_tensor: (tensor) size(batchsize,S,S,30)
         '''
         N = pred_tensor.size()[0]
-        coo_mask = target_tensor[:,:,:,4] > 0
-        noo_mask = target_tensor[:,:,:,4] == 0
+        coo_mask = target_tensor[:, :, :, 4] > 0
+        noo_mask = target_tensor[:, :, :, 4] == 0
         coo_mask = coo_mask.unsqueeze(-1).expand_as(target_tensor)
         noo_mask = noo_mask.unsqueeze(-1).expand_as(target_tensor)
 
-        coo_pred = pred_tensor[coo_mask].view(-1,30)
-        box_pred = coo_pred[:,:10].contiguous().view(-1,5) #box[x1,y1,w1,h1,c1]
-        class_pred = coo_pred[:,10:]                       #[x2,y2,w2,h2,c2]
-        
-        coo_target = target_tensor[coo_mask].view(-1,30)
-        box_target = coo_target[:,:10].contiguous().view(-1,5)
-        class_target = coo_target[:,10:]
+        coo_pred = pred_tensor[coo_mask].view(-1, 30)
+        box_pred = coo_pred[:, :10].contiguous().view(-1, 5)  # box[x1,y1,w1,h1,c1]
+        class_pred = coo_pred[:, 10:]  # [x2,y2,w2,h2,c2]
+
+        coo_target = target_tensor[coo_mask].view(-1, 30)
+        box_target = coo_target[:, :10].contiguous().view(-1, 5)
+        class_target = coo_target[:, 10:]
 
         # compute not contain obj loss
         noo_pred = pred_tensor[noo_mask].view(-1, 30)
@@ -88,9 +88,9 @@ class yoloLoss(nn.Module):
         for i in range(0, box_target.size()[0], 2):  # choose the best iou box
             box1 = box_pred[i:i + 2]
             box1_xyxy = Variable(torch.FloatTensor(box1.size()))
-            box1_xyxy[:,:2] = box1[:,:2]/14. -0.5*box1[:,2:4]
-            box1_xyxy[:,2:4] = box1[:,:2]/14. +0.5*box1[:,2:4]
-            box2 = box_target[i].view(-1,5)
+            box1_xyxy[:, :2] = box1[:, :2] / 14. - 0.5 * box1[:, 2:4]
+            box1_xyxy[:, 2:4] = box1[:, :2] / 14. + 0.5 * box1[:, 2:4]
+            box2 = box_target[i].view(-1, 5)
             box2_xyxy = Variable(torch.FloatTensor(box2.size()))
             box2_xyxy[:, :2] = box2[:, :2] / 14. - 0.5 * box2[:, 2:4]
             box2_xyxy[:, 2:4] = box2[:, :2] / 14. + 0.5 * box2[:, 2:4]
