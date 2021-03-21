@@ -5,6 +5,7 @@ txt image_name.jpg x y w h c x y w h c
 import os
 import os.path
 import random
+
 import cv2
 import numpy as np
 import torch
@@ -34,18 +35,20 @@ class yoloDataset(data.Dataset):
         with open(list_file) as f:
             lines = f.readlines()
 
+        idx = 1
         for line in lines:
-            splited = line.strip().split()
-            self.fnames.append(splited[0])
-            num_boxes = (len(splited) - 1) // 5
+            split = line.strip().split()
+            self.fnames.append(str(idx).rjust(7, '0') + '.jpg')
+            idx += 1
+            num_boxes = (len(split) - 1) // 5
             box = []
             label = []
             for i in range(num_boxes):
-                x = float(splited[1 + 5 * i])
-                y = float(splited[2 + 5 * i])
-                x2 = float(splited[3 + 5 * i])
-                y2 = float(splited[4 + 5 * i])
-                c = splited[0 + 5 * i]
+                x = float(split[1 + 5 * i])
+                y = float(split[2 + 5 * i])
+                x2 = float(split[3 + 5 * i])
+                y2 = float(split[4 + 5 * i])
+                c = split[0 + 5 * i]
                 box.append([x, y, x2, y2])
                 label.append(int(c) + 1)
             self.boxes.append(torch.Tensor(box))
@@ -89,6 +92,7 @@ class yoloDataset(data.Dataset):
         labels (tensor) [...]
         return 7x7x30
         """
+
         grid_num = 14
         target = torch.zeros((grid_num, grid_num, 30))
         cell_size = 1. / grid_num
@@ -161,20 +165,19 @@ class yoloDataset(data.Dataset):
             shift_x = random.uniform(-width * 0.2, width * 0.2)
             shift_y = random.uniform(-height * 0.2, height * 0.2)
             # print(bgr.shape,shift_x,shift_y)
-            # 原图像的平移
-            if shift_x >= 0 and shift_y >= 0:
-                after_shfit_image[int(shift_y):, int(shift_x):, :] = bgr[:height - int(shift_y), :width - int(shift_x),
-                                                                     :]
 
+            if shift_x >= 0 and shift_y >= 0:
+                after_shfit_image[int(shift_y):, int(shift_x):, :] = \
+                    bgr[:height - int(shift_y), :width - int(shift_x), :]
             elif shift_x >= 0 and shift_y < 0:
-                after_shfit_image[:height + int(shift_y), int(shift_x):, :] = bgr[-int(shift_y):, :width - int(shift_x),
-                                                                              :]
+                after_shfit_image[:height + int(shift_y), int(shift_x):, :] = \
+                    bgr[-int(shift_y):, :width - int(shift_x), :]
             elif shift_x < 0 and shift_y >= 0:
-                after_shfit_image[int(shift_y):, :width + int(shift_x), :] = bgr[:height - int(shift_y), -int(shift_x):,
-                                                                             :]
+                after_shfit_image[int(shift_y):, :width + int(shift_x), :] = \
+                    bgr[:height - int(shift_y), -int(shift_x):, :]
             elif shift_x < 0 and shift_y < 0:
-                after_shfit_image[:height + int(shift_y), :width + int(shift_x), :] = bgr[-int(shift_y):,
-                                                                                      - int(shift_x):, :]
+                after_shfit_image[:height + int(shift_y), :width + int(shift_x), :] = \
+                    bgr[-int(shift_y):, - int(shift_x):, :]
 
             shift_xy = torch.FloatTensor([[int(shift_x), int(shift_y)]]).expand_as(center)
             center = center + shift_xy
@@ -182,10 +185,13 @@ class yoloDataset(data.Dataset):
             mask2 = (center[:, 1] > 0) & (center[:, 1] < height)
             mask = (mask1 & mask2).view(-1, 1)
             boxes_in = boxes[mask.expand_as(boxes)].view(-1, 4)
+
             if len(boxes_in) == 0:
                 return bgr, boxes, labels
-            box_shift = torch.FloatTensor([[int(shift_x), int(shift_y), int(shift_x), int(shift_y)]]).expand_as(
-                boxes_in)
+            box_shift = torch.FloatTensor([[int(shift_x),
+                                            int(shift_y),
+                                            int(shift_x),
+                                            int(shift_y)]]).expand_as(boxes_in)
             boxes_in = boxes_in + box_shift
             labels_in = labels[mask.view(-1)]
             return after_shfit_image, boxes_in, labels_in
@@ -193,7 +199,6 @@ class yoloDataset(data.Dataset):
 
     def randomScale(self, bgr, boxes):
         # 固定住高度，以0.8-1.2伸缩宽度，做图像形变
-
         return bgr, boxes
 
     def randomCrop(self, bgr, boxes, labels):
@@ -256,7 +261,7 @@ def main():
     import torchvision.transforms as transforms
     file_root = '../../data/VOC2007/JPEGImages/'
     train_dataset = yoloDataset(root=file_root,
-                                list_file=file_root + 'labels_train.txt',
+                                list_file='../../data/VOC2007/label_train.txt',
                                 train=True,
                                 transform=[transforms.ToTensor()])
     train_loader = DataLoader(train_dataset, batch_size=1, shuffle=False, num_workers=0)
