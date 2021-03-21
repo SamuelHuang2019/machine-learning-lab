@@ -13,7 +13,7 @@ from yoloLoss import yoloLoss
 if __name__ == '__main__':
 
     # use_gpu = torch.cuda.is_available()
-    use_gpu = False
+    use_gpu = True
 
     file_root = '../../data/VOC2007/JPEGImages/'
     learning_rate = 0.001
